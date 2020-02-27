@@ -4,7 +4,7 @@
 @Author: Bend Function
 @Date: 2020-02-27 18:19:31
 @LastEditors: Bend Function
-@LastEditTime: 2020-02-27 21:23:08
+@LastEditTime: 2020-02-27 21:34:51
 '''
 import time
 from selenium import webdriver
@@ -34,7 +34,7 @@ for i in range(0,len(list)):
     step = 10
     endIndex = step
     while True:
-        if endIndex < len(list[i]):
+        if endIndex < len(list[i]) - 2:
             driver.switch_to.active_element.send_keys(list[i][startIndex:endIndex])
         else:
             driver.switch_to.active_element.send_keys(list[i][startIndex:len(list[i]) - 2])
@@ -46,13 +46,14 @@ for i in range(0,len(list)):
         
     # 一次不要输完,免得换行
     # driver.switch_to.active_element.send_keys(list[i][0:len(list[i]) - 2])
-    time.sleep(2)
+    time.sleep(1)
+    back_num = 3
     # 退3格,刷下退格数
-    for k in range(0,3):
+    for k in range(0,back_num):
         driver.switch_to.active_element.send_keys(Keys.BACKSPACE)
-    time.sleep(2)
+    time.sleep(1)
     # 补完
-    driver.switch_to.active_element.send_keys(list[i][len(list[i])-5:len(list[i])])
+    driver.switch_to.active_element.send_keys(list[i][len(list[i])-back_num-2:len(list[i])])
     time.sleep(1)
     # driver.switch_to.active_element.sendKeys(Keys.RETURN)
-    time.sleep(3.9)
+    # time.sleep(3.9)
