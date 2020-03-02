@@ -4,7 +4,7 @@
 @Author: Bend Function
 @Date: 2020-03-02 12:15:39
 @LastEditors: Bend Function
-@LastEditTime: 2020-03-02 13:01:25
+@LastEditTime: 2020-03-02 14:22:44
 '''
 import time
 from selenium import webdriver
@@ -25,7 +25,7 @@ driver = webdriver.Firefox()
 # 打开比赛网页
 # A68X1
 # 
-driver.get('https://dazi.kukuw.com/?tdsourcetag=s_pctim_aiomsg')
+driver.get('https://dazi.kukuw.com/')
 time.sleep(5)
 
 page_source =  driver.page_source
@@ -46,20 +46,14 @@ for id in range(0,300):
 # 主循环
 for line in list:
     # 这行要打的字 = line
-    # 如果单句太短就直接输出
-    if len(line) < 6:
-        driver.switch_to.active_element.send_keys(line)
-        time.sleep(0.2)
-        continue
-    
-
     for word in line:
         # delay calc with target WPM
         time.sleep(random.uniform(WpmDelay-0.1,WpmDelay+0.01))     # TODO
         driver.switch_to.active_element.send_keys(word)
         # time.sleep(random.uniform(WpmDelay-0.01,WpmDelay+0.001))
-
-        if random.randint(0,100) <= BackPro:
+        
+        # 退格控制
+        if random.uniform(0,100) <= BackPro:
             driver.switch_to.active_element.send_keys(Keys.BACKSPACE)
             time.sleep(0.1)
             driver.switch_to.active_element.send_keys(word)
@@ -68,3 +62,4 @@ for line in list:
         if word == line[len(line)-1]:
             driver.switch_to.active_element.send_keys(Keys.RETURN)
             time.sleep(0.1)
+ 
