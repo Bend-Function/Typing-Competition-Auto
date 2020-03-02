@@ -1,4 +1,9 @@
-# Fuck_Typing_Competition
+# Fuck Typing Competition
+## 适用环境
+
+仅适配酷酷网
+
+https://dazi.kukuw.com/
 
 ## 如何使用
 
