@@ -4,23 +4,105 @@
 @Author: Bend Function
 @Date: 2020-03-02 12:15:39
 @LastEditors: Bend Function
-@LastEditTime: 2020-03-02 15:02:57
+@LastEditTime: 2020-03-02 22:23:36
 '''
-import time
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
-import random
 
+import time
+import random
+import logging
+logging.basicConfig(level=logging.WARNING)
 #config--------------------------------
 # 退格率 填百分比
 BackPro = 1
 
 # 目标WPM
-TgWpm = 200
+CnTgWpm = 100
+EnTgWpm = 300
 
+# 在进行退格\换行时的等待时间,默认0.05s
+normalDelay = 0.05
+
+# WPM波峰,波谷
+speedUp = 50
+speedDown = 50
+# 波动范围
+floatPercent = 0.3
+# 曲线生成频率,默认5s
+speedFrq = 5
 #config--------------------------------
+#var------------------------
+# 统计中文行与英文行,以及字数
+CnLines = 0
+EnLines = 0
+CnWords = 0
+EnWords = 0
+
 # 因为有退格,所以补偿些时间
-WpmDelay = 55 / TgWpm
+# WpmDelay = 55 / TgWpm
+
+# 判断句子是否为中文.
+# 中文返回1,英文返回0
+# s 中只要含中文即返回1
+def isCn(s):
+    Character = s
+    for i in range(0,len(Character)):
+        if Character[i] >= u'\u4e00' and Character[i]<=u'\u9fa5':
+            return 100
+            i = i - 1
+            break
+    if i == len(Character)-1:
+        return 0
+
+# 为中文与英文行分配速度
+def blockSpeed(numBlocks,type):
+    global CnTgWpm,EnTgWpm,speedFrq,speedUp,speedDown,floatPercent
+    # 配置目标WPM
+    if type == "cn":
+        TgWpm = CnTgWpm
+    else:
+        TgWpm = EnTgWpm
+
+    # 生成阶段曲线
+    block = []
+    # count = 0
+    for blockNum in range(0,numBlocks):
+        
+        
+        # 为了营造波动幅度打的曲线,现在先随机方向
+        direction = random.randint(0,1)
+        if direction:
+            ranSpeed = TgWpm + speedUp - random.randint(0,int(speedUp * floatPercent))
+        else:
+            ranSpeed = TgWpm - speedDown + random.randint(0,int(speedDown * floatPercent))
+        # count += ranSpeed
+        # # 最后一个补全平均数
+        # if blockNum == numBlocks - 1:
+        #     print("here")
+        #     block.append(int(numBlocks * TgWpm - count))
+        #     break
+        block.append(ranSpeed)
+    
+
+    # avg = 0
+    # for x in block:
+    #     avg += x
+
+    # print(len(block))
+    # print(block)
+    # print(avg / len(block))    
+        
+    return block
+
+#查看当前剩余时间   秒
+def timeLimitNow(page_source):
+    startTimeLimit = page_source.find("<li class=\"daojishi_time\">") + 26
+    endTimeLimit = page_source.find("</li>",startTimeLimit)
+    # 换成秒
+    # logging.warning("time %s",page_source[startTimeLimit:endTimeLimit])
+    timeLimit = int(page_source[startTimeLimit:endTimeLimit - 3]) * 60 + int(page_source[startTimeLimit + 3:endTimeLimit])
+    return timeLimit
 
 # 使用Firefox
 driver = webdriver.Firefox()
@@ -31,6 +113,11 @@ driver.get('https://dazi.kukuw.com/')
 time.sleep(5)
 
 page_source =  driver.page_source
+
+# 查找设定时间
+totalTimeLimit = timeLimitNow(page_source)
+totalBlock = int(totalTimeLimit / speedFrq)
+
 # 把文章内容按行存入list
 list = []
 start = 0
@@ -39,31 +126,80 @@ for id in range(0,300):
     div_s = page_source.find("<div id=\"i_"+str(id)+"\"",start)
     if div_s == -1:
         break 
-    # 定位文字文字
+    # 定位文字行
     wordStart = page_source.find("<span>",div_s) + 6
     wordEnd = page_source.find("</span>",div_s)
     word = page_source[wordStart:wordEnd]
     start = wordEnd
-    list.append(word)
+    
+    # 统计中文行与英文行
+    if isCn(word):
+        CnLines += 1
+        CnWords += len(word)
+        list.append([word,1])
+    else:
+        EnLines += 1
+        EnWords += len([word,0])
+        list.append([word,0])
+
+logging.warning("CnLines = %d",CnLines)
+logging.warning("EnLines = %d",EnLines)
+
+# 全部分配 ,可能会与期望WPM有误差
+CnBlocks = blockSpeed(totalBlock+10,'cn')
+EnBlocks = blockSpeed(totalBlock+10,'en')
+
+logging.warning("CnBlocks = %s",CnBlocks)
+logging.warning("EnBlocks = %s",EnBlocks)
+
+# 统计中英文当前输入行
+CnWriteNow = 0
+EnWriteNow = 0
 
 # 主循环
-for line in list:
+timeSurplusBefore = totalTimeLimit
+for numLines in range(0,len(list)):
+    logging.warning("line %d",numLines)
+    line = list[numLines][0]
+    if list[numLines][1]:
+        delay = 55 / CnBlocks[CnWriteNow]
+        CnWriteNow += 1
+    else:
+        delay = 55 / EnBlocks[EnWriteNow]
+        EnWriteNow += 1
     # 这行要打的字 = line
-    for word in line:
+    for wordNum in range(0, len(line),2):
+        word = line[wordNum:wordNum+2]
+        page_source =  driver.page_source
+        timeSurplusNow = timeLimitNow(page_source)
+        if timeSurplusBefore - 5 >= timeSurplusNow:
+            logging.warning("Change Speed-CN %d EN %d",CnWriteNow,EnWriteNow)
+            if list[numLines][1]:
+                delay = 110 / CnBlocks[CnWriteNow]
+                CnWriteNow += 1 
+            else:
+                delay = 110 / EnBlocks[EnWriteNow]
+                EnWriteNow += 1
+            timeSurplusBefore = timeSurplusNow
+
         # delay calc with target WPM
-        time.sleep(random.uniform(WpmDelay-0.2,WpmDelay+0.2))     # TODO
+        time.sleep(random.uniform(delay-0.1,delay+0.1))     # TODO
+        # time.sleep(delay)
         driver.switch_to.active_element.send_keys(word)
         
         # 退格控制,最后一个字不退,以防bug
         if random.uniform(0,100) <= BackPro and word != line[len(line)-1]:
-            time.sleep(0.05)
+            time.sleep(normalDelay)
             driver.switch_to.active_element.send_keys(Keys.BACKSPACE)
-            time.sleep(0.05)
+            time.sleep(normalDelay)
+            driver.switch_to.active_element.send_keys(Keys.BACKSPACE)
+            time.sleep(normalDelay)
             driver.switch_to.active_element.send_keys(word)
-            time.sleep(0.05)
-        
+            time.sleep(normalDelay)
+
+        # 最后一个字换行,有些文章不会换行
         if word == line[len(line)-1]:
-            time.sleep(0.05)
+            time.sleep(normalDelay)
             driver.switch_to.active_element.send_keys(Keys.RETURN)
-            time.sleep(0.05)
- 
+            time.sleep(normalDelay)
+
