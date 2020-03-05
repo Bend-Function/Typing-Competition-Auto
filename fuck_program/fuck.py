@@ -39,9 +39,6 @@ EnLines = 0
 CnWords = 0
 EnWords = 0
 
-# 因为有退格,所以补偿些时间
-# WpmDelay = 55 / TgWpm
-
 # 判断句子是否为中文.
 # 中文返回1,英文返回0
 # s 中只要含中文即返回1
@@ -60,7 +57,6 @@ def blockSpeed(numBlocks,type):
         TgWpm = CnTgWpm
     else:
         TgWpm = EnTgWpm
-
     # 生成阶段曲线
     block = []
     # count = 0
@@ -71,9 +67,7 @@ def blockSpeed(numBlocks,type):
             ranSpeed = TgWpm + speedUp - random.randint(0,int(speedUp * floatPercent))
         else:
             ranSpeed = TgWpm - speedDown + random.randint(0,int(speedDown * floatPercent))
-
         block.append(ranSpeed)
-    
     return block
 
 #查看当前剩余时间   秒
@@ -88,8 +82,6 @@ def timeLimitNow(page_source):
 # 使用Firefox
 driver = webdriver.Firefox()
 # 打开比赛网页
-# A68X1
-
 driver.get('https://dazi.kukuw.com/')
 time.sleep(5)
 
@@ -154,11 +146,7 @@ for numLines in range(0,len(list)):
                 delay = 60 / EnBlocks[EnWriteNow]
                 EnWriteNow += 1
             logging.warning("Change Speed-CN %d EN %d speed %d",CnWriteNow,EnWriteNow,int(delay*60))
-
             timeSurplusBefore = timeSurplusNow
-
-        # delay calc with target WPM
-        # time.sleep(random.uniform(delay-0.1,delay+0.1))     # TODO
         time.sleep(delay)
         driver.switch_to.active_element.send_keys(word)
         
