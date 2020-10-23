@@ -21,7 +21,7 @@ BackPro = 1
 CnTgWpm = 180
 EnTgWpm = 300
 
-# 在进行退格\换行时的等待时间,默认0.05s
+# 在进行退格\换行时的等待时间,默认0.1s
 normalDelay = 0.1
 
 # WPM波峰,波谷
