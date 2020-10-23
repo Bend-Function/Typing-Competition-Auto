@@ -83,7 +83,8 @@ def timeLimitNow(page_source):
 driver = webdriver.Firefox()
 # 打开比赛网页
 driver.get('https://dazi.kukuw.com/')
-time.sleep(5)
+# wait 15s to login
+time.sleep(15)
 
 page_source =  driver.page_source
 
